@@ -148,7 +148,7 @@ struct MenuBarView: View {
                         challengeCopied = false
                     }
                 } label: {
-                    Text(challengeCopied ? "Copied!" : "Challenge")
+                    Text(challengeCopied ? "Copied, share anywhere!" : "Challenge")
                         .font(.caption)
                         .foregroundColor(challengeCopied ? .vibeGreen : nil)
                 }
