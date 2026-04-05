@@ -512,90 +512,6 @@
             50% { opacity: 0.7; }
         }
 
-        /* Email capture */
-        .email-section {
-            text-align: center;
-            margin: 60px 0;
-        }
-
-        .email-section h2 {
-            font-size: 20px;
-            color: #fff;
-            margin-bottom: 8px;
-            letter-spacing: 0;
-            text-transform: none;
-        }
-
-        .email-section h2::before {
-            content: "";
-        }
-
-        .email-section .sub {
-            font-size: 13px;
-            color: var(--dim);
-            margin-bottom: 24px;
-        }
-
-        .email-form {
-            display: flex;
-            gap: 8px;
-            max-width: 460px;
-            margin: 0 auto;
-        }
-
-        .email-form input {
-            flex: 1;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px 16px;
-            color: var(--text);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .email-form input:focus {
-            border-color: var(--green);
-        }
-
-        .email-form input::placeholder {
-            color: #444;
-        }
-
-        .email-form button {
-            background: var(--orange);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            padding: 14px 24px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .email-form button:hover {
-            background: #f5ad35;
-            transform: translateY(-1px);
-        }
-
-        .email-note {
-            margin-top: 10px;
-            font-size: 11px;
-            color: #333;
-        }
-
-        .email-success {
-            display: none;
-            color: var(--green);
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 16px;
-        }
 
         /* Responsive */
         @media (max-width: 600px) {
@@ -827,40 +743,24 @@
         </div>
     </div>
 
-    <!-- Email Capture -->
-    <div class="email-section">
-        <h2>Play VibeWars. See how your vibes rank.</h2>
-        <p class="sub">Drop your email. We'll let you know when it's your turn to compete.</p>
-        <form class="email-form" id="email-form" onsubmit="return handleSubmit(event)">
-            <input type="email" placeholder="dev@example.com" required id="email-input">
-            <button type="submit">Count me in</button>
-        </form>
-        <div class="email-success" id="email-success">You're in. Watch your inbox.</div>
-        <div class="email-note">Join <span id="signup-count">early</span> vibe coders on the leaderboard</div>
-    </div>
-
-    <!-- Challenge a Viber -->
-    <div class="email-section" style="margin-top: 40px;">
-        <h2>Think you code harder than your friends?</h2>
-        <p class="sub">Challenge them. Send the link. Let the vibes decide.</p>
-        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <a href="https://twitter.com/intent/tweet?text=I%27m%20on%20the%20VibeWars%20leaderboard.%20Think%20you%20can%20out-vibe%20me%3F%20%F0%9F%94%A5%0A%0Ahttps%3A%2F%2Fvibewars.dev" target="_blank" class="download-btn" style="background: var(--purple); font-size: 13px; padding: 12px 24px;">
-                Challenge on X
-            </a>
-            <button onclick="navigator.clipboard.writeText('I\'m on the VibeWars leaderboard. Think you can out-vibe me? 🔥\nhttps://vibewars.dev'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy Link', 2000);" class="download-btn" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); font-size: 13px; padding: 12px 24px;">
-                Copy Link
-            </button>
-        </div>
-    </div>
-
     <!-- Download -->
     <div class="download-section">
+        <h2 style="font-size: 22px; color: #fff; margin-bottom: 6px; letter-spacing: 0; text-transform: none;">Play VibeWars. See how your vibes rank.</h2>
+        <p style="font-size: 13px; color: var(--dim); margin-bottom: 28px;">Install it. Code. Watch yourself climb.</p>
         <a href="https://github.com/michaelperry/vibecheck/releases" class="download-btn">
             Download for macOS
         </a>
         <div class="download-note">macOS 13+ &middot; Apple Silicon & Intel</div>
         <div class="or-brew">
             or &nbsp; <code>brew install --cask vibewars</code> &nbsp; <span style="color: var(--dim);">(coming soon)</span>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 24px;">
+            <a href="https://twitter.com/intent/tweet?text=I%27m%20on%20the%20VibeWars%20leaderboard.%20Think%20you%20can%20out-vibe%20me%3F%20%F0%9F%94%A5%0A%0Ahttps%3A%2F%2Fvibewars.dev" target="_blank" class="download-btn" style="background: var(--purple); font-size: 13px; padding: 12px 24px;">
+                Challenge on X
+            </a>
+            <button onclick="navigator.clipboard.writeText('I\'m on the VibeWars leaderboard. Think you can out-vibe me? \u{1F525}\nhttps://vibewars.dev'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy Link', 2000);" class="download-btn" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); font-size: 13px; padding: 12px 24px;">
+                Copy Link
+            </button>
         </div>
     </div>
 
@@ -881,33 +781,6 @@
     </footer>
 
 </div>
-
-<script>
-async function handleSubmit(e) {
-    e.preventDefault();
-    const email = document.getElementById('email-input').value;
-    const form = document.getElementById('email-form');
-    const success = document.getElementById('email-success');
-
-    try {
-        // Store signup in Supabase
-        await fetch('https://wofxaqovazcxmcnmgrjg.supabase.co/rest/v1/email_signups', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZnhhcW92YXpjeG1jbm1ncmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2NTEsImV4cCI6MjA5MDk4MDY1MX0.hZGBavn5FSudQXd1oTL40-Bbuu9ece77jzMOzDAuVpY',
-                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZnhhcW92YXpjeG1jbm1ncmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2NTEsImV4cCI6MjA5MDk4MDY1MX0.hZGBavn5FSudQXd1oTL40-Bbuu9ece77jzMOzDAuVpY'
-            },
-            body: JSON.stringify({ email: email })
-        });
-    } catch (err) {
-        // Still show success even if Supabase fails
-    }
-
-    form.style.display = 'none';
-    success.style.display = 'block';
-}
-</script>
 
 </body>
 </html>
