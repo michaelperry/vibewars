@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var store: AppStore
+    @State private var challengeCopied = false
 
     private var vibe: VibeState {
         ScoreEngine.vibeState(from: store.vibeScore)
@@ -142,9 +143,14 @@ struct MenuBarView: View {
                     let message = "I'm on the VibeWars leaderboard. Think you can out-vibe me? \u{1F525}\nhttps://vibewars.dev"
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(message, forType: .string)
+                    challengeCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        challengeCopied = false
+                    }
                 } label: {
-                    Text("Challenge")
+                    Text(challengeCopied ? "Copied!" : "Challenge")
                         .font(.caption)
+                        .foregroundColor(challengeCopied ? .vibeGreen : nil)
                 }
                 .buttonStyle(.borderless)
 
