@@ -6,9 +6,85 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("GitHub") {
-                SecureField("Personal Access Token", text: $store.githubToken)
-                if !store.githubUsername.isEmpty {
-                    LabeledContent("Username", value: store.githubUsername)
+                if store.isGitHubAuthenticated {
+                    // Signed in state
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("Connected as @\(store.githubUsername)")
+                            .fontWeight(.medium)
+                        Spacer()
+                        Button("Sign Out") {
+                            store.signOutGitHub()
+                        }
+                        .foregroundColor(.red)
+                    }
+                } else if store.isAuthenticatingGitHub {
+                    // Waiting for user to approve in browser
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let code = store.deviceUserCode {
+                            HStack {
+                                Text("Your code:")
+                                    .foregroundColor(.secondary)
+                                Text(code)
+                                    .font(.system(.title2, design: .monospaced))
+                                    .fontWeight(.bold)
+                                    .textSelection(.enabled)
+                                Button {
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(code, forType: .string)
+                                } label: {
+                                    Image(systemName: "doc.on.doc")
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Copy code")
+                            }
+                            Text("Enter this code on GitHub, then approve access.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            if let uri = store.deviceVerificationURI {
+                                Button("Open GitHub") {
+                                    if let url = URL(string: uri) {
+                                        NSWorkspace.shared.open(url)
+                                    }
+                                }
+                                .font(.caption)
+                            }
+                        }
+
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Waiting for authorization...")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                        }
+
+                        Button("Cancel") {
+                            store.cancelGitHubSignIn()
+                        }
+                        .font(.caption)
+                    }
+                } else {
+                    // Not signed in
+                    Button {
+                        store.signInWithGitHub()
+                    } label: {
+                        HStack {
+                            Image(systemName: "person.crop.circle.badge.checkmark")
+                            Text("Sign in with GitHub")
+                        }
+                    }
+
+                    Text("Uses GitHub Device Flow -- no token needed.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                if let error = store.githubAuthError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
                 }
                 if let error = store.githubError {
                     Text(error)

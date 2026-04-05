@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import AppKit
 
 class AppStore: ObservableObject {
 
@@ -51,6 +52,13 @@ class AppStore: ObservableObject {
     @Published var githubError: String? = nil
     @Published var claudeError: String? = nil
     @Published var lastUpdated: Date? = nil
+
+    // GitHub OAuth Device Flow state
+    @Published var isAuthenticatingGitHub: Bool = false
+    @Published var deviceUserCode: String? = nil
+    @Published var deviceVerificationURI: String? = nil
+    @Published var githubAuthError: String? = nil
+    private var authPollingTask: Task<Void, Never>? = nil
 
     // Scoring & Rankings
     @Published var vibeScore: VibeScore = ScoreEngine.calculate(commits: 0, providers: [], streak: 0)
@@ -128,6 +136,92 @@ class AppStore: ObservableObject {
             await checkRankingService()
             await refreshAll()
         }
+    }
+
+    var isGitHubAuthenticated: Bool {
+        !githubToken.isEmpty
+    }
+
+    func signInWithGitHub() {
+        guard !isAuthenticatingGitHub else { return }
+        isAuthenticatingGitHub = true
+        githubAuthError = nil
+        deviceUserCode = nil
+        deviceVerificationURI = nil
+
+        authPollingTask = Task {
+            do {
+                let deviceCode = try await GitHubAuth.requestDeviceCode()
+
+                await MainActor.run {
+                    self.deviceUserCode = deviceCode.userCode
+                    self.deviceVerificationURI = deviceCode.verificationURI
+                }
+
+                // Open the browser for the user
+                if let url = URL(string: deviceCode.verificationURI) {
+                    await MainActor.run {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+
+                // Poll until the user approves
+                let token = try await GitHubAuth.pollForToken(
+                    deviceCode: deviceCode.deviceCode,
+                    interval: deviceCode.interval,
+                    expiresIn: deviceCode.expiresIn
+                )
+
+                // Fetch username
+                let username = try await GitHubAuth.fetchUsername(token: token)
+
+                await MainActor.run {
+                    self.githubToken = token
+                    self.githubUsername = username
+                    self.isAuthenticatingGitHub = false
+                    self.deviceUserCode = nil
+                    self.deviceVerificationURI = nil
+                }
+
+                // Refresh data now that we have a token
+                await refreshAll()
+            } catch is CancellationError {
+                await MainActor.run {
+                    self.isAuthenticatingGitHub = false
+                    self.deviceUserCode = nil
+                    self.deviceVerificationURI = nil
+                }
+            } catch {
+                await MainActor.run {
+                    self.githubAuthError = error.localizedDescription
+                    self.isAuthenticatingGitHub = false
+                    self.deviceUserCode = nil
+                    self.deviceVerificationURI = nil
+                }
+            }
+        }
+    }
+
+    func cancelGitHubSignIn() {
+        authPollingTask?.cancel()
+        authPollingTask = nil
+        isAuthenticatingGitHub = false
+        deviceUserCode = nil
+        deviceVerificationURI = nil
+    }
+
+    func signOutGitHub() {
+        cancelGitHubSignIn()
+        githubToken = ""
+        githubUsername = ""
+        commitsToday = 0
+        commitsWeek = 0
+        todayCommits = []
+        repoCommits = []
+        currentStreak = 0
+        longestStreak = 0
+        githubError = nil
+        githubAuthError = nil
     }
 
     func refreshAll() async {
