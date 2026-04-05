@@ -4,10 +4,10 @@ import Combine
 class AppStore: ObservableObject {
 
     @Published var githubToken: String {
-        didSet { UserDefaults.standard.set(githubToken, forKey: "githubToken") }
+        didSet { KeychainHelper.save(githubToken, for: "githubToken") }
     }
     @Published var claudeApiKey: String {
-        didSet { UserDefaults.standard.set(claudeApiKey, forKey: "claudeApiKey") }
+        didSet { KeychainHelper.save(claudeApiKey, for: "claudeApiKey") }
     }
     @Published var githubUsername: String {
         didSet { UserDefaults.standard.set(githubUsername, forKey: "githubUsername") }
@@ -59,8 +59,8 @@ class AppStore: ObservableObject {
     private var refreshTimer: Timer?
 
     init() {
-        self.githubToken = UserDefaults.standard.string(forKey: "githubToken") ?? ""
-        self.claudeApiKey = UserDefaults.standard.string(forKey: "claudeApiKey") ?? ""
+        self.githubToken = KeychainHelper.load("githubToken")
+        self.claudeApiKey = KeychainHelper.load("claudeApiKey")
         self.githubUsername = UserDefaults.standard.string(forKey: "githubUsername") ?? ""
         self.rankingsEnabled = UserDefaults.standard.object(forKey: "rankingsEnabled") as? Bool ?? true
         loadPersistedData()

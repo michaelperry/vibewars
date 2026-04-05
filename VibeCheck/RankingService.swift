@@ -1,5 +1,6 @@
 import Foundation
 import CloudKit
+import CryptoKit
 
 actor RankingService {
 
@@ -15,9 +16,12 @@ actor RankingService {
     // MARK: - Submit Score
 
     /// Submit (or update) the user's anonymous score for a given period.
+    /// The user's CloudKit ID is hashed before use so records can't be
+    /// correlated back to an iCloud account, even by querying the public DB.
     func submitScore(_ score: Double, periodType: String, periodKey: String) async throws {
         let userID = try await container.userRecordID()
-        let recordID = CKRecord.ID(recordName: "\(userID.recordName)_\(periodType)_\(periodKey)")
+        let anonymousID = hashedID(userID.recordName)
+        let recordID = CKRecord.ID(recordName: "\(anonymousID)_\(periodType)_\(periodKey)")
 
         // Try to fetch existing record to update, otherwise create new
         let record: CKRecord
@@ -70,6 +74,17 @@ actor RankingService {
         let (results, _) = try await database.records(matching: query, resultsLimit: CKQueryOperation.maximumResults)
         count = results.count
         return count
+    }
+
+    // MARK: - Privacy
+
+    /// One-way hash of the CloudKit user record name so the raw iCloud
+    /// identifier never appears in public database records.
+    private func hashedID(_ recordName: String) -> String {
+        let salt = "vibecheck_2026" // static salt to namespace the hash
+        let input = Data((salt + recordName).utf8)
+        let digest = SHA256.hash(data: input)
+        return digest.prefix(16).map { String(format: "%02x", $0) }.joined()
     }
 
     // MARK: - Account Status
