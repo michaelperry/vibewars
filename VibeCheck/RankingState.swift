@@ -23,15 +23,18 @@ struct RankingResult {
                 return "Holding steady at #\(rank)"
             }
         }
+        if total == 1 {
+            return "First one here — you're the vibe pioneer"
+        }
         if total < 10 {
-            return "Early adopter — rankings are warming up"
+            return "Early adopter — \(total) vibe coders and counting"
         }
         return "Welcome to the leaderboard"
     }
 
     var percentileText: String {
-        if total < 10 { return "—" }
-        let p = Int(percentile.rounded())
-        return "Top \(max(100 - p, 1))%"
+        if total <= 1 { return "Top 1%" }
+        let topPercent = max(Int((Double(rank) / Double(total) * 100).rounded()), 1)
+        return "Top \(topPercent)%"
     }
 }
