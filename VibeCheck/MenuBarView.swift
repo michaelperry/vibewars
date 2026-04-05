@@ -56,23 +56,36 @@ struct MenuBarView: View {
 
             Divider()
 
-            // Claude Code stats (local)
+            // AI Tools stats (auto-detected)
             VStack(alignment: .leading, spacing: 6) {
-                Text("Claude Code")
+                Text("AI Tools")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .textCase(.uppercase)
 
-                if store.claudeLocal.todayTokens > 0 || store.claudeLocal.weekTokens > 0 {
-                    HStack {
-                        StatBox(label: "Tokens", value: formatTokens(store.claudeLocal.todayTokens))
-                        StatBox(label: "Messages", value: "\(store.claudeLocal.todayMessages)")
-                        StatBox(label: "Sessions", value: "\(store.claudeLocal.todaySessions)")
-                    }
-                } else {
-                    Text("No Claude Code activity detected")
+                if store.activityProviders.isEmpty {
+                    Text("No AI tool activity detected today")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                } else {
+                    ForEach(store.activityProviders.map { $0.providerName }, id: \.self) { name in
+                        ToolRow(name: name, provider: store.activityProviders.first { $0.providerName == name }!)
+                    }
+                }
+
+                // Total across all tools
+                let totalTokens = store.activityProviders.reduce(0) { $0 + $1.todayTokens }
+                if totalTokens > 0 && store.activityProviders.count > 1 {
+                    HStack {
+                        Text("Total")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Text(formatTokens(totalTokens) + " tokens")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 2)
                 }
             }
 
@@ -141,6 +154,32 @@ struct MenuBarView: View {
         }
         .padding(16)
         .frame(width: 320)
+    }
+
+    private func formatTokens(_ count: Int) -> String {
+        if count >= 1_000_000 { return String(format: "%.1fM", Double(count) / 1_000_000) }
+        if count >= 1_000 { return String(format: "%.1fK", Double(count) / 1_000) }
+        return "\(count)"
+    }
+}
+
+struct ToolRow: View {
+    let name: String
+    let provider: ActivityProvider
+
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(Color.vibeGreen)
+                .frame(width: 6, height: 6)
+            Text(name)
+                .font(.caption)
+                .fontWeight(.medium)
+            Spacer()
+            Text(formatTokens(provider.todayTokens) + " tokens")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
     }
 
     private func formatTokens(_ count: Int) -> String {

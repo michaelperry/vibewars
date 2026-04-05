@@ -13,10 +13,19 @@ class AppStore: ObservableObject {
         didSet { UserDefaults.standard.set(githubUsername, forKey: "githubUsername") }
     }
 
-    // Claude Code local usage (read from ~/.claude/)
+    // Local AI tool usage (auto-detected, no API keys needed)
     @Published var claudeLocal: ClaudeLocalProvider = ClaudeLocalProvider(
         todayTokens: 0, weekTokens: 0, todayMessages: 0,
         todayToolCalls: 0, todaySessions: 0, weekMessages: 0
+    )
+    @Published var codexLocal: CodexLocalProvider = CodexLocalReader.empty()
+    @Published var cursorLocal: CursorLocalProvider = CursorLocalProvider(
+        todayTokens: 0, weekTokens: 0, todayMessages: 0,
+        todaySessions: 0, weekMessages: 0
+    )
+    @Published var copilotLocal: CopilotLocalProvider = CopilotLocalProvider(
+        todayTokens: 0, weekTokens: 0, todayMessages: 0,
+        todaySuggestions: 0, weekMessages: 0
     )
 
     // Claude API usage (optional, for org-level billing data)
@@ -54,17 +63,33 @@ class AppStore: ObservableObject {
 
     var activityProviders: [ActivityProvider] {
         var providers: [ActivityProvider] = []
-        // Prefer local Claude Code data (no API key needed)
+
+        // Claude Code (local files)
         if claudeLocal.todayTokens > 0 || claudeLocal.weekTokens > 0 {
             providers.append(claudeLocal)
-        }
-        // Fall back to API data if local isn't available
-        else if claudeInputTokensToday + claudeOutputTokensToday > 0 {
+        } else if claudeInputTokensToday + claudeOutputTokensToday > 0 {
+            // Fall back to API data
             providers.append(ClaudeProvider(
                 todayTokens: claudeInputTokensToday + claudeOutputTokensToday,
                 weekTokens: claudeInputTokensWeek + claudeOutputTokensWeek
             ))
         }
+
+        // Codex (OpenAI)
+        if codexLocal.todayTokens > 0 || codexLocal.weekTokens > 0 {
+            providers.append(codexLocal)
+        }
+
+        // Cursor
+        if cursorLocal.todayTokens > 0 || cursorLocal.weekTokens > 0 {
+            providers.append(cursorLocal)
+        }
+
+        // GitHub Copilot
+        if copilotLocal.todayTokens > 0 || copilotLocal.weekTokens > 0 {
+            providers.append(copilotLocal)
+        }
+
         return providers
     }
 
@@ -86,7 +111,7 @@ class AppStore: ObservableObject {
     func refreshAll() async {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.fetchGitHub() }
-            group.addTask { await self.readClaudeLocal() }
+            group.addTask { await self.readLocalProviders() }
             group.addTask { await self.fetchClaudeUsage() }
         }
         await MainActor.run {
@@ -260,11 +285,19 @@ class AppStore: ObservableObject {
         }
     }
 
-    /// Read Claude Code usage from local ~/.claude/ session files.
-    /// No API key required — works automatically for Claude Code users.
-    private func readClaudeLocal() async {
-        let provider = ClaudeLocalReader.readUsage()
-        await MainActor.run { self.claudeLocal = provider }
+    /// Read all local AI tool usage — no API keys required.
+    /// Scans ~/.claude/, ~/.codex/, Cursor, and VS Code extension storage.
+    private func readLocalProviders() async {
+        let claude = ClaudeLocalReader.readUsage()
+        let codex = CodexLocalReader.readUsage()
+        let cursor = CursorLocalReader.readUsage()
+        let copilot = CopilotLocalReader.readUsage()
+        await MainActor.run {
+            self.claudeLocal = claude
+            self.codexLocal = codex
+            self.cursorLocal = cursor
+            self.copilotLocal = copilot
+        }
     }
 
     func fetchClaudeUsage() async {

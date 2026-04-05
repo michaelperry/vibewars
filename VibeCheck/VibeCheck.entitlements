@@ -9,6 +9,12 @@
 	<key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
 	<array>
 		<string>.claude/</string>
+		<string>.codex/</string>
+		<string>.cursor/</string>
+		<string>.vscode/</string>
+		<string>Library/Application Support/Cursor/</string>
+		<string>Library/Application Support/Code/</string>
+		<string>Library/Application Support/Codex/</string>
 	</array>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
