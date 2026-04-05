@@ -17,21 +17,19 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Claude Code") {
-                HStack {
-                    Circle()
-                        .fill(store.claudeLocal.todayTokens > 0 ? Color.green : Color.orange)
-                        .frame(width: 8, height: 8)
-                    Text(store.claudeLocal.todayTokens > 0
-                         ? "Detected — reading from ~/.claude/"
-                         : "No activity today")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+            Section("AI Tools") {
+                ToolStatusRow(name: "Claude Code", path: "~/.claude/", active: store.claudeLocal.todayTokens > 0)
+                ToolStatusRow(name: "Codex", path: "~/.codex/", active: store.codexLocal.todayTokens > 0)
+                ToolStatusRow(name: "Cursor", path: "~/Library/.../Cursor/", active: store.cursorLocal.todayTokens > 0)
+                ToolStatusRow(name: "Copilot", path: "~/Library/.../Code/", active: store.copilotLocal.todayTokens > 0)
+
+                Text("AI tools are detected automatically from local files. No API keys required.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
 
                 DisclosureGroup("Advanced: Claude API Key (optional)") {
                     SecureField("API Key (for org billing data)", text: $store.claudeApiKey)
-                    Text("Only needed if you want org-level cost data. Local usage is detected automatically.")
+                    Text("Only needed if you want org-level cost data.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     if let error = store.claudeError {
@@ -45,16 +43,16 @@ struct SettingsView: View {
 
             Section("Rankings") {
                 Toggle("Participate in anonymous rankings", isOn: $store.rankingsEnabled)
-                Text("Only your composite VibeScore (a single number) is shared anonymously. No activity details, usernames, or API keys are ever transmitted.")
+                Text("Only your composite VibeScore (a single number 0–100) is shared anonymously. No activity details, usernames, or API keys are ever transmitted.")
                     .font(.caption)
                     .foregroundColor(.secondary)
 
                 if store.rankingsEnabled {
                     HStack {
                         Circle()
-                            .fill(store.iCloudAvailable ? Color.green : Color.red)
+                            .fill(store.rankingServiceAvailable ? Color.green : Color.red)
                             .frame(width: 8, height: 8)
-                        Text(store.iCloudAvailable ? "iCloud connected" : "iCloud not available")
+                        Text(store.rankingServiceAvailable ? "Connected to leaderboard" : "Leaderboard unavailable")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -68,6 +66,27 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 400, height: 380)
+        .frame(width: 400, height: 420)
+    }
+}
+
+struct ToolStatusRow: View {
+    let name: String
+    let path: String
+    let active: Bool
+
+    var body: some View {
+        HStack {
+            Circle()
+                .fill(active ? Color.green : Color.gray.opacity(0.4))
+                .frame(width: 8, height: 8)
+            Text(name)
+                .font(.caption)
+                .fontWeight(.medium)
+            Spacer()
+            Text(active ? "Active" : "Not detected")
+                .font(.caption)
+                .foregroundColor(active ? .green : .secondary)
+        }
     }
 }

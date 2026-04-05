@@ -1,100 +1,148 @@
 import Foundation
-import CloudKit
 import CryptoKit
 
 actor RankingService {
 
     static let shared = RankingService()
 
-    private let container = CKContainer(identifier: "iCloud.com.michaelperry.VibeCheck")
-    private let database: CKDatabase
+    // MARK: - Configuration
+    // Set these from your Supabase project dashboard (Settings > API)
+    private let supabaseURL: String
+    private let supabaseAnonKey: String
 
     private init() {
-        self.database = container.publicCloudDatabase
+        self.supabaseURL = UserDefaults.standard.string(forKey: "supabaseURL")
+            ?? "YOUR_SUPABASE_URL"
+        self.supabaseAnonKey = UserDefaults.standard.string(forKey: "supabaseAnonKey")
+            ?? "YOUR_SUPABASE_ANON_KEY"
     }
 
-    // MARK: - Submit Score
+    /// Reconfigure with new Supabase credentials (called from settings or bundled config).
+    func configure(url: String, anonKey: String) {
+        UserDefaults.standard.set(url, forKey: "supabaseURL")
+        UserDefaults.standard.set(anonKey, forKey: "supabaseAnonKey")
+    }
 
-    /// Submit (or update) the user's anonymous score for a given period.
-    /// The user's CloudKit ID is hashed before use so records can't be
-    /// correlated back to an iCloud account, even by querying the public DB.
-    func submitScore(_ score: Double, periodType: String, periodKey: String) async throws {
-        let userID = try await container.userRecordID()
-        let anonymousID = hashedID(userID.recordName)
-        let recordID = CKRecord.ID(recordName: "\(anonymousID)_\(periodType)_\(periodKey)")
+    // MARK: - Submit Score & Get Ranking (single round trip)
 
-        // Try to fetch existing record to update, otherwise create new
-        let record: CKRecord
-        do {
-            record = try await database.record(for: recordID)
-            record["vibeScore"] = score as CKRecordValue
-            record["modifiedAt"] = Date() as CKRecordValue
-        } catch {
-            let newRecord = CKRecord(recordType: "ScoreEntry", recordID: recordID)
-            newRecord["vibeScore"] = score as CKRecordValue
-            newRecord["periodType"] = periodType as CKRecordValue
-            newRecord["periodKey"] = periodKey as CKRecordValue
-            newRecord["modifiedAt"] = Date() as CKRecordValue
-            record = newRecord
+    /// Submit score and retrieve rank in one call via Supabase RPC.
+    func submitAndRank(score: Double, periodType: String, periodKey: String) async throws -> (rank: Int, total: Int, percentile: Double) {
+        let anonymousID = getAnonymousID()
+
+        let body: [String: Any] = [
+            "p_anonymous_id": anonymousID,
+            "p_vibe_score": score,
+            "p_period_type": periodType,
+            "p_period_key": periodKey
+        ]
+
+        let result = try await rpc("submit_and_rank", body: body)
+
+        guard let rank = result["rank"] as? Int,
+              let total = result["total"] as? Int,
+              let percentile = result["percentile"] as? Double
+        else {
+            throw RankingError.invalidResponse
         }
 
-        let _ = try await database.save(record)
+        return (rank, total, percentile)
     }
 
-    // MARK: - Fetch Ranking
+    // MARK: - Anonymous Identity
 
-    /// Fetch the user's rank and percentile for a given period.
-    func fetchRanking(myScore: Double, periodType: String, periodKey: String) async throws -> (rank: Int, total: Int, percentile: Double) {
-        // Count records with score higher than ours
-        let abovePredicate = NSPredicate(format: "periodType == %@ AND periodKey == %@ AND vibeScore > %f", periodType, periodKey, myScore)
-        let aboveQuery = CKQuery(recordType: "ScoreEntry", predicate: abovePredicate)
-        let aboveCount = try await countRecords(matching: aboveQuery)
+    /// Generate a stable anonymous ID from hardware UUID + salt.
+    /// This never leaves the device as a raw identifier — only the hash is sent.
+    private func getAnonymousID() -> String {
+        // Check for cached ID first
+        if let cached = UserDefaults.standard.string(forKey: "vibecheck_anon_id") {
+            return cached
+        }
 
-        // Count total records for this period
-        let totalPredicate = NSPredicate(format: "periodType == %@ AND periodKey == %@", periodType, periodKey)
-        let totalQuery = CKQuery(recordType: "ScoreEntry", predicate: totalPredicate)
-        let totalCount = try await countRecords(matching: totalQuery)
+        // Generate from hardware UUID for stability across app reinstalls
+        let platform = ProcessInfo.processInfo.environment["__CF_USER_TEXT_ENCODING"]
+            ?? UUID().uuidString
+        let machineID = Host.current().name ?? UUID().uuidString
+        let raw = "vibecheck_2026_\(platform)_\(machineID)"
 
-        let rank = aboveCount + 1
-        let percentile = totalCount > 1
-            ? Double(totalCount - rank) / Double(totalCount - 1) * 100.0
-            : 100.0
+        let hash = SHA256.hash(data: Data(raw.utf8))
+        let anonymousID = hash.prefix(16).map { String(format: "%02x", $0) }.joined()
 
-        return (rank, totalCount, percentile)
+        UserDefaults.standard.set(anonymousID, forKey: "vibecheck_anon_id")
+        return anonymousID
     }
 
-    // MARK: - Helpers
+    // MARK: - Supabase HTTP Client
 
-    private func countRecords(matching query: CKQuery) async throws -> Int {
-        var count = 0
-        let operation = CKQueryOperation(query: query)
-        operation.desiredKeys = [] // We only need the count, not field data
-        operation.resultsLimit = CKQueryOperation.maximumResults
+    private func rpc(_ functionName: String, body: [String: Any]) async throws -> [String: Any] {
+        guard supabaseURL != "YOUR_SUPABASE_URL" else {
+            throw RankingError.notConfigured
+        }
 
-        let (results, _) = try await database.records(matching: query, resultsLimit: CKQueryOperation.maximumResults)
-        count = results.count
-        return count
+        guard let url = URL(string: "\(supabaseURL)/rest/v1/rpc/\(functionName)") else {
+            throw RankingError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
+        request.setValue("Bearer \(supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 10
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw RankingError.invalidResponse
+        }
+
+        guard http.statusCode == 200 else {
+            let msg = String(data: data, encoding: .utf8) ?? "Unknown error"
+            print("VibeCheck: Supabase error \(http.statusCode): \(msg)")
+            throw RankingError.serverError(http.statusCode, msg)
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw RankingError.invalidResponse
+        }
+
+        return json
     }
 
-    // MARK: - Privacy
+    // MARK: - Availability
 
-    /// One-way hash of the CloudKit user record name so the raw iCloud
-    /// identifier never appears in public database records.
-    private func hashedID(_ recordName: String) -> String {
-        let salt = "vibecheck_2026" // static salt to namespace the hash
-        let input = Data((salt + recordName).utf8)
-        let digest = SHA256.hash(data: input)
-        return digest.prefix(16).map { String(format: "%02x", $0) }.joined()
+    var isConfigured: Bool {
+        supabaseURL != "YOUR_SUPABASE_URL" && supabaseAnonKey != "YOUR_SUPABASE_ANON_KEY"
     }
-
-    // MARK: - Account Status
 
     func isAvailable() async -> Bool {
+        guard isConfigured else { return false }
+        // Quick health check
+        guard let url = URL(string: "\(supabaseURL)/rest/v1/") else { return false }
+        var request = URLRequest(url: url)
+        request.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
+        request.timeoutInterval = 5
         do {
-            let status = try await container.accountStatus()
-            return status == .available
+            let (_, response) = try await URLSession.shared.data(for: request)
+            return (response as? HTTPURLResponse)?.statusCode == 200
         } catch {
             return false
+        }
+    }
+}
+
+enum RankingError: LocalizedError {
+    case notConfigured
+    case invalidURL
+    case invalidResponse
+    case serverError(Int, String)
+
+    var errorDescription: String? {
+        switch self {
+        case .notConfigured: return "Supabase not configured"
+        case .invalidURL: return "Invalid Supabase URL"
+        case .invalidResponse: return "Invalid response from server"
+        case .serverError(let code, let msg): return "Server error \(code): \(msg)"
         }
     }
 }

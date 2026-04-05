@@ -16,13 +16,5 @@
 		<string>Library/Application Support/Code/</string>
 		<string>Library/Application Support/Codex/</string>
 	</array>
-	<key>com.apple.developer.icloud-container-identifiers</key>
-	<array>
-		<string>iCloud.com.michaelperry.VibeCheck</string>
-	</array>
-	<key>com.apple.developer.icloud-services</key>
-	<array>
-		<string>CloudKit</string>
-	</array>
 </dict>
 </plist>

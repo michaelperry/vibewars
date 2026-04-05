@@ -121,8 +121,8 @@ struct MenuBarView: View {
                     }
                 }
 
-                if !store.iCloudAvailable && store.rankingsEnabled {
-                    Text("Sign into iCloud to join rankings")
+                if !store.rankingServiceAvailable && store.rankingsEnabled {
+                    Text("Rankings connecting...")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }

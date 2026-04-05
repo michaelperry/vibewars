@@ -59,7 +59,7 @@ class AppStore: ObservableObject {
     @Published var rankingsEnabled: Bool {
         didSet { UserDefaults.standard.set(rankingsEnabled, forKey: "rankingsEnabled") }
     }
-    @Published var iCloudAvailable: Bool = false
+    @Published var rankingServiceAvailable: Bool = false
 
     var activityProviders: [ActivityProvider] {
         var providers: [ActivityProvider] = []
@@ -103,7 +103,7 @@ class AppStore: ObservableObject {
         loadPersistedData()
         scheduleRefresh()
         Task {
-            await checkiCloudStatus()
+            await checkRankingService()
             await refreshAll()
         }
     }
@@ -122,14 +122,14 @@ class AppStore: ObservableObject {
             )
             self.lastUpdated = Date()
         }
-        if rankingsEnabled && iCloudAvailable {
+        if rankingsEnabled && rankingServiceAvailable {
             await submitAndFetchRankings()
         }
     }
 
-    private func checkiCloudStatus() async {
+    private func checkRankingService() async {
         let available = await RankingService.shared.isAvailable()
-        await MainActor.run { self.iCloudAvailable = available }
+        await MainActor.run { self.rankingServiceAvailable = available }
     }
 
     private func submitAndFetchRankings() async {
@@ -142,14 +142,14 @@ class AppStore: ObservableObject {
         let year = cal.component(.yearForWeekOfYear, from: Date())
         let weeklyKey = "\(year)-W\(String(format: "%02d", weekOfYear))"
 
-        // Submit daily and weekly scores, then fetch rankings
         do {
-            async let dailySubmit: () = RankingService.shared.submitScore(score, periodType: "daily", periodKey: dailyKey)
-            async let weeklySubmit: () = RankingService.shared.submitScore(score, periodType: "weekly", periodKey: weeklyKey)
-            let _ = try await (dailySubmit, weeklySubmit)
-
-            async let dailyResult = RankingService.shared.fetchRanking(myScore: score, periodType: "daily", periodKey: dailyKey)
-            async let weeklyResult = RankingService.shared.fetchRanking(myScore: score, periodType: "weekly", periodKey: weeklyKey)
+            // Single round trip per period: upsert score + get rank back
+            async let dailyResult = RankingService.shared.submitAndRank(
+                score: score, periodType: "daily", periodKey: dailyKey
+            )
+            async let weeklyResult = RankingService.shared.submitAndRank(
+                score: score, periodType: "weekly", periodKey: weeklyKey
+            )
 
             let (daily, weekly) = try await (dailyResult, weeklyResult)
 
