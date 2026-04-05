@@ -333,10 +333,276 @@
             color: #333;
         }
 
+        /* App Preview */
+        .preview-section {
+            text-align: center;
+        }
+
+        .app-mockup {
+            display: inline-block;
+            background: #1c1c1e;
+            border-radius: 16px;
+            border: 1px solid #333;
+            width: 340px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+            text-align: left;
+            animation: floatIn 0.8s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes floatIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mock-header {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .mock-header .title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .mock-header .refresh {
+            font-size: 11px;
+            color: var(--dim);
+        }
+
+        .mock-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid #222;
+        }
+
+        .mock-section-label {
+            font-size: 9px;
+            font-weight: 600;
+            color: #555;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .mock-stats {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .mock-stat .num {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .mock-stat .lbl {
+            font-size: 9px;
+            color: #555;
+            margin-top: 2px;
+        }
+
+        .mock-tool-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        .mock-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .mock-tool-name {
+            font-size: 12px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .mock-tool-val {
+            margin-left: auto;
+            font-size: 11px;
+            color: #555;
+        }
+
+        .mock-vibe {
+            text-align: center;
+            padding: 4px 0;
+        }
+
+        .mock-vibe-score {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--orange), var(--green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mock-rank {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 8px;
+        }
+
+        .mock-rank .item {
+            text-align: center;
+        }
+
+        .mock-rank .val {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .mock-rank .val.green { color: var(--green); }
+        .mock-rank .val.purple { color: var(--purple); }
+        .mock-rank .val.orange { color: var(--orange); }
+
+        .mock-rank .tag {
+            font-size: 9px;
+            color: #555;
+            margin-top: 2px;
+        }
+
+        .mock-subtitle {
+            text-align: center;
+            font-size: 11px;
+            color: var(--green);
+            margin-top: 8px;
+        }
+
+        .mock-vibe-label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .mock-vibe-sub {
+            font-size: 11px;
+            color: #555;
+        }
+
+        .mock-vibe-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0 8px;
+        }
+
+        .mock-emoji {
+            font-size: 22px;
+        }
+
+        /* Animated counter */
+        .counter {
+            display: inline-block;
+            animation: countPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes countPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Email capture */
+        .email-section {
+            text-align: center;
+            margin: 60px 0;
+        }
+
+        .email-section h2 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 8px;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        .email-section h2::before {
+            content: "";
+        }
+
+        .email-section .sub {
+            font-size: 13px;
+            color: var(--dim);
+            margin-bottom: 24px;
+        }
+
+        .email-form {
+            display: flex;
+            gap: 8px;
+            max-width: 460px;
+            margin: 0 auto;
+        }
+
+        .email-form input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .email-form input:focus {
+            border-color: var(--green);
+        }
+
+        .email-form input::placeholder {
+            color: #444;
+        }
+
+        .email-form button {
+            background: var(--orange);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .email-form button:hover {
+            background: #f5ad35;
+            transform: translateY(-1px);
+        }
+
+        .email-note {
+            margin-top: 10px;
+            font-size: 11px;
+            color: #333;
+        }
+
+        .email-success {
+            display: none;
+            color: var(--green);
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 16px;
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             .features { grid-template-columns: 1fr; }
             .tools-grid { grid-template-columns: repeat(2, 1fr); }
+            .email-form { flex-direction: column; }
+            .app-mockup { width: 300px; }
             .terminal-body { padding: 20px; font-size: 12px; }
         }
     </style>
@@ -383,6 +649,81 @@
             <br><br>
             Think Strava, but for vibe coding &mdash; and everyone's racing.
         </p>
+    </div>
+
+    <!-- App Preview -->
+    <div class="section preview-section">
+        <h2>See it in action</h2>
+        <div class="app-mockup">
+            <div class="mock-header">
+                <span class="title">VibeWars</span>
+                <span class="refresh">Updated 12 sec ago</span>
+            </div>
+
+            <div class="mock-section">
+                <div class="mock-vibe-header">
+                    <span class="mock-emoji">&#128293;</span>
+                    <div>
+                        <div class="mock-vibe-label" style="color: var(--orange);">Cooking</div>
+                        <div class="mock-vibe-sub">You're absolutely ripping today</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mock-section">
+                <div class="mock-section-label">GitHub</div>
+                <div class="mock-stats">
+                    <div class="mock-stat">
+                        <div class="num">14</div>
+                        <div class="lbl">Today</div>
+                    </div>
+                    <div class="mock-stat">
+                        <div class="num">47</div>
+                        <div class="lbl">This Week</div>
+                    </div>
+                    <div class="mock-stat">
+                        <div class="num" style="color: var(--orange);">12d</div>
+                        <div class="lbl">Streak</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mock-section">
+                <div class="mock-section-label">AI Tools</div>
+                <div class="mock-tool-row">
+                    <div class="mock-dot"></div>
+                    <span class="mock-tool-name">Claude Code</span>
+                    <span class="mock-tool-val">142.8K tokens</span>
+                </div>
+                <div class="mock-tool-row">
+                    <div class="mock-dot" style="background: var(--purple);"></div>
+                    <span class="mock-tool-name">Codex</span>
+                    <span class="mock-tool-val">51.2K tokens</span>
+                </div>
+            </div>
+
+            <div class="mock-section">
+                <div class="mock-section-label">VibeScore</div>
+                <div class="mock-vibe">
+                    <div class="mock-vibe-score counter">78</div>
+                </div>
+                <div class="mock-rank">
+                    <div class="item">
+                        <div class="val green">#40</div>
+                        <div class="tag">Rank</div>
+                    </div>
+                    <div class="item">
+                        <div class="val orange">Top 3%</div>
+                        <div class="tag">Percentile</div>
+                    </div>
+                    <div class="item">
+                        <div class="val purple">&#8593; 2</div>
+                        <div class="tag">Climbed</div>
+                    </div>
+                </div>
+                <div class="mock-subtitle">Defeating 97% of developers today</div>
+            </div>
+        </div>
     </div>
 
     <!-- Features -->
@@ -486,6 +827,18 @@
         </div>
     </div>
 
+    <!-- Email Capture -->
+    <div class="email-section">
+        <h2>Join the leaderboard</h2>
+        <p class="sub">Get notified when new features drop. No spam, just vibes.</p>
+        <form class="email-form" id="email-form" onsubmit="return handleSubmit(event)">
+            <input type="email" placeholder="dev@example.com" required id="email-input">
+            <button type="submit">Count me in</button>
+        </form>
+        <div class="email-success" id="email-success">You're in. Watch your inbox.</div>
+        <div class="email-note">Join <span id="signup-count">early</span> vibe coders on the leaderboard</div>
+    </div>
+
     <!-- Download -->
     <div class="download-section">
         <a href="https://github.com/michaelperry/vibecheck/releases" class="download-btn">
@@ -514,6 +867,33 @@
     </footer>
 
 </div>
+
+<script>
+async function handleSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('email-input').value;
+    const form = document.getElementById('email-form');
+    const success = document.getElementById('email-success');
+
+    try {
+        // Store signup in Supabase
+        await fetch('https://wofxaqovazcxmcnmgrjg.supabase.co/rest/v1/email_signups', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZnhhcW92YXpjeG1jbm1ncmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2NTEsImV4cCI6MjA5MDk4MDY1MX0.hZGBavn5FSudQXd1oTL40-Bbuu9ece77jzMOzDAuVpY',
+                'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZnhhcW92YXpjeG1jbm1ncmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2NTEsImV4cCI6MjA5MDk4MDY1MX0.hZGBavn5FSudQXd1oTL40-Bbuu9ece77jzMOzDAuVpY'
+            },
+            body: JSON.stringify({ email: email })
+        });
+    } catch (err) {
+        // Still show success even if Supabase fails
+    }
+
+    form.style.display = 'none';
+    success.style.display = 'block';
+}
+</script>
 
 </body>
 </html>
