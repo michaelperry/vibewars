@@ -56,17 +56,23 @@ struct MenuBarView: View {
 
             Divider()
 
-            // Claude stats
+            // Claude Code stats (local)
             VStack(alignment: .leading, spacing: 6) {
-                Text("Claude")
+                Text("Claude Code")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .textCase(.uppercase)
 
-                HStack {
-                    StatBox(label: "Today", value: formatTokens(store.claudeInputTokensToday + store.claudeOutputTokensToday))
-                    StatBox(label: "Cost Today", value: String(format: "$%.2f", store.claudeCostToday))
-                    StatBox(label: "Cost Week", value: String(format: "$%.2f", store.claudeCostWeek))
+                if store.claudeLocal.todayTokens > 0 || store.claudeLocal.weekTokens > 0 {
+                    HStack {
+                        StatBox(label: "Tokens", value: formatTokens(store.claudeLocal.todayTokens))
+                        StatBox(label: "Messages", value: "\(store.claudeLocal.todayMessages)")
+                        StatBox(label: "Sessions", value: "\(store.claudeLocal.todaySessions)")
+                    }
+                } else {
+                    Text("No Claude Code activity detected")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
 

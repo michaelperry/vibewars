@@ -13,6 +13,13 @@ class AppStore: ObservableObject {
         didSet { UserDefaults.standard.set(githubUsername, forKey: "githubUsername") }
     }
 
+    // Claude Code local usage (read from ~/.claude/)
+    @Published var claudeLocal: ClaudeLocalProvider = ClaudeLocalProvider(
+        todayTokens: 0, weekTokens: 0, todayMessages: 0,
+        todayToolCalls: 0, todaySessions: 0, weekMessages: 0
+    )
+
+    // Claude API usage (optional, for org-level billing data)
     @Published var claudeInputTokensToday: Int = 0
     @Published var claudeOutputTokensToday: Int = 0
     @Published var claudeInputTokensWeek: Int = 0
@@ -47,7 +54,12 @@ class AppStore: ObservableObject {
 
     var activityProviders: [ActivityProvider] {
         var providers: [ActivityProvider] = []
-        if claudeInputTokensToday + claudeOutputTokensToday > 0 {
+        // Prefer local Claude Code data (no API key needed)
+        if claudeLocal.todayTokens > 0 || claudeLocal.weekTokens > 0 {
+            providers.append(claudeLocal)
+        }
+        // Fall back to API data if local isn't available
+        else if claudeInputTokensToday + claudeOutputTokensToday > 0 {
             providers.append(ClaudeProvider(
                 todayTokens: claudeInputTokensToday + claudeOutputTokensToday,
                 weekTokens: claudeInputTokensWeek + claudeOutputTokensWeek
@@ -74,6 +86,7 @@ class AppStore: ObservableObject {
     func refreshAll() async {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.fetchGitHub() }
+            group.addTask { await self.readClaudeLocal() }
             group.addTask { await self.fetchClaudeUsage() }
         }
         await MainActor.run {
@@ -245,6 +258,13 @@ class AppStore: ObservableObject {
         } catch {
             await MainActor.run { self.githubError = error.localizedDescription; self.isFetchingGitHub = false }
         }
+    }
+
+    /// Read Claude Code usage from local ~/.claude/ session files.
+    /// No API key required — works automatically for Claude Code users.
+    private func readClaudeLocal() async {
+        let provider = ClaudeLocalReader.readUsage()
+        await MainActor.run { self.claudeLocal = provider }
     }
 
     func fetchClaudeUsage() async {
