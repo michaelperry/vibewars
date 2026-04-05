@@ -24,7 +24,7 @@ actor RankingService {
     // MARK: - Submit Score & Get Ranking (single round trip)
 
     /// Submit score and retrieve rank in one call via Supabase RPC.
-    func submitAndRank(score: Double, periodType: String, periodKey: String) async throws -> (rank: Int, total: Int, percentile: Double) {
+    func submitAndRank(score: Double, periodType: String, periodKey: String) async throws -> (rank: Int, total: Int, percentile: Double, warriorNumber: Int?) {
         let anonymousID = getAnonymousID()
 
         let body: [String: Any] = [
@@ -43,7 +43,9 @@ actor RankingService {
             throw RankingError.invalidResponse
         }
 
-        return (rank, total, percentile)
+        let warriorNumber = result["warrior_number"] as? Int
+
+        return (rank, total, percentile, warriorNumber)
     }
 
     // MARK: - Anonymous Identity

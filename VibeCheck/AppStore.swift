@@ -64,6 +64,7 @@ class AppStore: ObservableObject {
     @Published var vibeScore: VibeScore = ScoreEngine.calculate(commits: 0, providers: [], streak: 0)
     @Published var dailyRanking: RankingResult? = nil
     @Published var weeklyRanking: RankingResult? = nil
+    @Published var warriorNumber: Int? = nil
     @Published var rankingsEnabled: Bool {
         didSet { UserDefaults.standard.set(rankingsEnabled, forKey: "rankingsEnabled") }
     }
@@ -126,6 +127,9 @@ class AppStore: ObservableObject {
                 print("VibeWars: Migrated Claude API key to Keychain")
             }
         }
+
+        let savedWarrior = UserDefaults.standard.integer(forKey: "warriorNumber")
+        if savedWarrior > 0 { self.warriorNumber = savedWarrior }
 
         print("VibeWars: Init — GitHub token: \(githubToken.isEmpty ? "EMPTY" : "set (\(githubToken.prefix(4))...)"), username: \(githubUsername)")
         print("VibeWars: Real home: \(RealHome.path)")
@@ -272,14 +276,27 @@ class AppStore: ObservableObject {
             let prevDailyRank = UserDefaults.standard.object(forKey: "prevDailyRank_\(dailyKey)") as? Int
             let prevWeeklyRank = UserDefaults.standard.object(forKey: "prevWeeklyRank_\(weeklyKey)") as? Int
 
+            // Persist warrior number once we get it
+            let resolvedWarriorNumber = daily.warriorNumber ?? weekly.warriorNumber
+
             await MainActor.run {
+                if let wn = resolvedWarriorNumber {
+                    self.warriorNumber = wn
+                    UserDefaults.standard.set(wn, forKey: "warriorNumber")
+                } else if self.warriorNumber == nil {
+                    // Restore from persisted value
+                    let saved = UserDefaults.standard.integer(forKey: "warriorNumber")
+                    if saved > 0 { self.warriorNumber = saved }
+                }
                 self.dailyRanking = RankingResult(
                     rank: daily.rank, total: daily.total, percentile: daily.percentile,
-                    previousRank: prevDailyRank, periodType: "daily", periodKey: dailyKey
+                    previousRank: prevDailyRank, periodType: "daily", periodKey: dailyKey,
+                    warriorNumber: self.warriorNumber
                 )
                 self.weeklyRanking = RankingResult(
                     rank: weekly.rank, total: weekly.total, percentile: weekly.percentile,
-                    previousRank: prevWeeklyRank, periodType: "weekly", periodKey: weeklyKey
+                    previousRank: prevWeeklyRank, periodType: "weekly", periodKey: weeklyKey,
+                    warriorNumber: self.warriorNumber
                 )
                 UserDefaults.standard.set(daily.rank, forKey: "prevDailyRank_\(dailyKey)")
                 UserDefaults.standard.set(weekly.rank, forKey: "prevWeeklyRank_\(weeklyKey)")

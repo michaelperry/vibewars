@@ -21,6 +21,15 @@ struct MenuBarLabel: View {
                 .font(.system(size: 12, weight: .medium, design: .monospaced))
                 .foregroundColor(.primary)
 
+            if let wn = store.warriorNumber {
+                Text("·")
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 11))
+                Text("#\(wn)")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.vibeOrange)
+            }
+
             if store.currentStreak > 1 {
                 Text("·")
                     .foregroundColor(.secondary)

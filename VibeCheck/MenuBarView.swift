@@ -16,9 +16,20 @@ struct MenuBarView: View {
                 Text(vibe.emoji)
                     .font(.system(size: 24))
                 VStack(alignment: .leading) {
-                    Text(vibe.label)
-                        .font(.headline)
-                        .foregroundColor(vibe.color)
+                    HStack(spacing: 6) {
+                        Text(vibe.label)
+                            .font(.headline)
+                            .foregroundColor(vibe.color)
+                        if let wn = store.warriorNumber {
+                            Text("Warrior #\(wn)")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.vibeOrange)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.vibeOrange.opacity(0.15))
+                                .cornerRadius(4)
+                        }
+                    }
                     Text(vibe.subtitle)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -191,7 +202,8 @@ struct MenuBarView: View {
             commitsToday: store.commitsToday,
             totalTokens: totalTokens,
             streak: store.currentStreak,
-            username: store.githubUsername
+            username: store.githubUsername,
+            warriorNumber: store.warriorNumber
         )
         guard let image = cardView.renderToImage() else { return }
 

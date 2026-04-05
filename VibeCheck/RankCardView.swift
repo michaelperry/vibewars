@@ -8,6 +8,7 @@ struct RankCardView: View {
     let totalTokens: Int
     let streak: Int
     let username: String
+    var warriorNumber: Int? = nil
 
     private let cardWidth: CGFloat = 600
     private let cardHeight: CGFloat = 400
@@ -47,9 +48,20 @@ struct RankCardView: View {
                             .font(.system(size: 32))
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("VibeWars")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.white)
+                        HStack(spacing: 8) {
+                            Text("VibeWars")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.white)
+                            if let wn = warriorNumber {
+                                Text("Warrior #\(wn)")
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .foregroundColor(orange)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(orange.opacity(0.2))
+                                    .cornerRadius(4)
+                            }
+                        }
                         if !username.isEmpty {
                             Text("@\(username)")
                                 .font(.system(size: 13, weight: .medium))

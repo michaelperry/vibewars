@@ -532,10 +532,10 @@
         let url;
         if (currentPeriod === 'alltime') {
             // Get the highest score per anonymous_id across all time
-            url = SUPABASE_URL + '/rest/v1/score_entries?select=anonymous_id,vibe_score&order=vibe_score.desc&limit=50';
+            url = SUPABASE_URL + '/rest/v1/score_entries?select=anonymous_id,vibe_score,warrior_number&order=vibe_score.desc&limit=50';
         } else {
             const periodKey = getPeriodKey();
-            url = SUPABASE_URL + '/rest/v1/score_entries?period_type=eq.' + currentPeriod +
+            url = SUPABASE_URL + '/rest/v1/score_entries?select=anonymous_id,vibe_score,warrior_number&period_type=eq.' + currentPeriod +
                 '&period_key=eq.' + periodKey + '&order=vibe_score.desc&limit=50';
         }
 
@@ -581,7 +581,8 @@
         let html = '';
         data.forEach(function(entry, i) {
             const rank = i + 1;
-            const anonId = (entry.anonymous_id || 'unknown').substring(0, 8);
+            const warriorNum = entry.warrior_number;
+            const displayName = warriorNum ? 'Warrior #' + warriorNum : 'Viber #' + (entry.anonymous_id || 'unknown').substring(0, 8) + '...';
             const score = Math.round(entry.vibe_score || 0);
             const barWidth = Math.round((score / 100) * 100);
 
@@ -593,7 +594,7 @@
 
             html += '<div class="lb-row ' + rowClass + '">' +
                 '<span class="lb-rank">#' + rank + '<span class="lb-rank-medal">' + medal + '</span></span>' +
-                '<span class="lb-name">Viber #' + anonId + '...</span>' +
+                '<span class="lb-name">' + displayName + '</span>' +
                 '<span class="lb-score">' + score + '</span>' +
                 '<span class="lb-bar-cell"><span class="lb-bar-track"><span class="lb-bar-fill" style="width:' + barWidth + '%"></span></span></span>' +
                 '</div>';

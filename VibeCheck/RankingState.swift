@@ -7,6 +7,7 @@ struct RankingResult {
     let previousRank: Int?     // nil on first submission
     let periodType: String     // "daily" or "weekly"
     let periodKey: String      // "2026-04-05" or "2026-W14"
+    let warriorNumber: Int?    // permanent sequential warrior ID
 
     var rankDelta: Int? {
         guard let prev = previousRank else { return nil }
