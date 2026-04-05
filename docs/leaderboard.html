@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeWars — Global Leaderboard</title>
+    <meta name="description" content="Live global leaderboard for VibeWars. See who's dominating the vibe coding arena today.">
+
+    <link rel="icon" type="image/png" href="samurai.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --border: #2a2a2a;
+            --text: #e0e0e0;
+            --dim: #666;
+            --green: #1D9E75;
+            --purple: #7F77DD;
+            --orange: #EF9F27;
+            --red: #e55;
+            --prompt: #1D9E75;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-top: 48px;
+            margin-bottom: 32px;
+        }
+
+        .header a {
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header img {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            color: var(--dim);
+            margin-top: 6px;
+        }
+
+        /* Meta bar */
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .meta-info {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: var(--dim);
+        }
+
+        .meta-info .value {
+            color: var(--orange);
+            font-weight: 600;
+        }
+
+        .meta-info .green-value {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s ease-in-out infinite;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--dim);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            border-color: #444;
+        }
+
+        .tab.active {
+            background: var(--green);
+            color: #000;
+            border-color: var(--green);
+            font-weight: 700;
+        }
+
+        /* Terminal leaderboard */
+        .terminal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .terminal-bar {
+            background: #1a1a1a;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .terminal-dot.red { background: #ff5f57; }
+        .terminal-dot.yellow { background: #febc2e; }
+        .terminal-dot.green { background: #28c840; }
+
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            color: var(--dim);
+            font-size: 13px;
+        }
+
+        .terminal-body {
+            padding: 0;
+        }
+
+        /* Table header */
+        .table-header {
+            display: grid;
+            grid-template-columns: 50px 1fr 100px 180px;
+            padding: 12px 20px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #555;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Leaderboard rows */
+        .lb-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 100px 180px;
+            padding: 10px 20px;
+            align-items: center;
+            border-bottom: 1px solid #1e1e1e;
+            font-size: 13px;
+            transition: background 0.15s;
+        }
+
+        .lb-row:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .lb-row:last-child {
+            border-bottom: none;
+        }
+
+        .lb-rank {
+            font-weight: 700;
+            color: var(--dim);
+        }
+
+        .lb-row.gold .lb-rank { color: var(--gold); }
+        .lb-row.silver .lb-rank { color: var(--silver); }
+        .lb-row.bronze .lb-rank { color: var(--bronze); }
+
+        .lb-row.gold { background: rgba(255, 215, 0, 0.03); }
+        .lb-row.silver { background: rgba(192, 192, 192, 0.03); }
+        .lb-row.bronze { background: rgba(205, 127, 50, 0.03); }
+
+        .lb-rank-medal {
+            display: none;
+            margin-left: 2px;
+        }
+
+        .lb-row.gold .lb-rank-medal,
+        .lb-row.silver .lb-rank-medal,
+        .lb-row.bronze .lb-rank-medal {
+            display: inline;
+        }
+
+        .lb-name {
+            color: var(--text);
+            font-size: 12px;
+        }
+
+        .lb-row.gold .lb-name { color: var(--gold); font-weight: 600; }
+        .lb-row.silver .lb-name { color: var(--silver); font-weight: 600; }
+        .lb-row.bronze .lb-name { color: var(--bronze); font-weight: 600; }
+
+        .lb-score {
+            color: var(--green);
+            font-weight: 700;
+            text-align: right;
+            padding-right: 16px;
+        }
+
+        .lb-bar-cell {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .lb-bar-track {
+            width: 100%;
+            height: 6px;
+            background: #1e1e1e;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .lb-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: var(--green);
+            transition: width 0.6s ease;
+        }
+
+        .lb-row.gold .lb-bar-fill { background: var(--gold); }
+        .lb-row.silver .lb-bar-fill { background: var(--silver); }
+        .lb-row.bronze .lb-bar-fill { background: var(--bronze); }
+
+        /* Loading / empty states */
+        .state-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--dim);
+            font-size: 13px;
+        }
+
+        .state-message .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Download section */
+        .download-section {
+            text-align: center;
+            margin: 48px 0 24px;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--green);
+            color: #000;
+            padding: 14px 36px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .download-btn:hover {
+            background: #24b886;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(29, 158, 117, 0.3);
+        }
+
+        .download-note {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--dim);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 48px;
+            padding: 32px 0;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 12px;
+        }
+
+        .footer-links a {
+            color: var(--dim);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--purple);
+        }
+
+        .footer-note {
+            margin-top: 12px;
+            font-size: 11px;
+            color: #333;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .table-header,
+            .lb-row {
+                grid-template-columns: 40px 1fr 70px 100px;
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+
+            .table-header {
+                font-size: 9px;
+            }
+
+            .lb-name {
+                font-size: 11px;
+            }
+
+            .meta-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <a href="https://vibewars.dev">
+            <img src="samurai.png" alt="VibeWars">
+            <h1>VibeWars</h1>
+        </a>
+        <div class="subtitle">Global Leaderboard</div>
+    </div>
+
+    <!-- Meta bar -->
+    <div class="meta-bar">
+        <div class="meta-info">
+            <span><span class="live-dot"></span> Live</span>
+            <span>Players: <span class="green-value" id="player-count">--</span></span>
+            <span id="period-label">Date: <span class="value" id="period-display">--</span></span>
+        </div>
+        <div class="meta-info" style="font-size: 11px;">
+            <span id="refresh-timer">Refreshes in 60s</span>
+        </div>
+    </div>
+
+    <!-- CTA Banner -->
+    <div style="background: linear-gradient(135deg, rgba(29,158,117,0.15), rgba(239,159,39,0.15)); border: 1px solid var(--border); border-radius: 10px; padding: 16px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <div style="font-size: 14px; font-weight: 700; color: #fff;">Think you can hang?</div>
+            <div style="font-size: 12px; color: var(--dim);">Install VibeWars and battle for the top spot.</div>
+        </div>
+        <a href="https://github.com/michaelperry/vibecheck/releases" style="background: var(--orange); color: #000; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono', monospace;">Download & Battle</a>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" data-period="daily" onclick="switchTab('daily')">Last 24h</button>
+        <button class="tab" data-period="weekly" onclick="switchTab('weekly')">This Week</button>
+        <button class="tab" data-period="alltime" onclick="switchTab('alltime')">All Time</button>
+    </div>
+
+    <!-- Leaderboard terminal -->
+    <div class="terminal">
+        <div class="terminal-bar">
+            <div class="terminal-dot red"></div>
+            <div class="terminal-dot yellow"></div>
+            <div class="terminal-dot green"></div>
+            <div class="terminal-title">leaderboard &mdash; top 50</div>
+            <div style="width: 52px;"></div>
+        </div>
+        <div class="terminal-body">
+            <div class="table-header">
+                <span>Rank</span>
+                <span>Player</span>
+                <span style="text-align: right; padding-right: 16px;">Score</span>
+                <span>Level</span>
+            </div>
+            <div id="leaderboard-rows">
+                <div class="state-message">
+                    <div class="loading-spinner"></div>
+                    <div>Fetching leaderboard data...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download -->
+    <div class="download-section">
+        <p style="font-size: 13px; color: var(--dim); margin-bottom: 16px;">Join the arena. See your name on this board.</p>
+        <a href="https://github.com/michaelperry/vibecheck/releases" class="download-btn">
+            Download for macOS
+        </a>
+        <div class="download-note">macOS 13+ &middot; Apple Silicon & Intel</div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="https://vibewars.dev">Home</a>
+            <a href="https://github.com/michaelperry/vibecheck">GitHub</a>
+            <a href="https://vibewars.dev">vibewars.dev</a>
+        </div>
+        <div class="footer-note">VibeWars &mdash; The developer leaderboard for vibe coders</div>
+    </footer>
+
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://wofxaqovazcxmcnmgrjg.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvZnhhcW92YXpjeG1jbm1ncmpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDQ2NTEsImV4cCI6MjA5MDk4MDY1MX0.hZGBavn5FSudQXd1oTL40-Bbuu9ece77jzMOzDAuVpY';
+
+    let currentPeriod = 'daily';
+    let refreshCountdown = 60;
+    let refreshInterval = null;
+
+    function getTodayKey() {
+        const d = new Date();
+        return d.getFullYear() + '-' +
+            String(d.getMonth() + 1).padStart(2, '0') + '-' +
+            String(d.getDate()).padStart(2, '0');
+    }
+
+    function getWeekKey() {
+        const d = new Date();
+        const jan1 = new Date(d.getFullYear(), 0, 1);
+        const days = Math.floor((d - jan1) / 86400000);
+        const week = Math.ceil((days + jan1.getDay() + 1) / 7);
+        return d.getFullYear() + '-W' + String(week).padStart(2, '0');
+    }
+
+    function getPeriodKey() {
+        if (currentPeriod === 'alltime') return null;
+        return currentPeriod === 'daily' ? getTodayKey() : getWeekKey();
+    }
+
+    function updatePeriodDisplay() {
+        const label = document.getElementById('period-label');
+        if (currentPeriod === 'daily') {
+            label.innerHTML = 'Date: <span class="value">' + getTodayKey() + '</span>';
+        } else if (currentPeriod === 'weekly') {
+            label.innerHTML = 'Week: <span class="value">' + getWeekKey() + '</span>';
+        } else {
+            label.innerHTML = '<span class="value">All Time</span>';
+        }
+    }
+
+    async function fetchLeaderboard() {
+        let url;
+        if (currentPeriod === 'alltime') {
+            // Get the highest score per anonymous_id across all time
+            url = SUPABASE_URL + '/rest/v1/score_entries?select=anonymous_id,vibe_score&order=vibe_score.desc&limit=50';
+        } else {
+            const periodKey = getPeriodKey();
+            url = SUPABASE_URL + '/rest/v1/score_entries?period_type=eq.' + currentPeriod +
+                '&period_key=eq.' + periodKey + '&order=vibe_score.desc&limit=50';
+        }
+
+        try {
+            const resp = await fetch(url, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                }
+            });
+
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+            const data = await resp.json();
+            renderLeaderboard(data);
+        } catch (err) {
+            document.getElementById('leaderboard-rows').innerHTML =
+                '<div class="state-message">' +
+                '<div class="icon">&#9888;</div>' +
+                '<div>Failed to load leaderboard</div>' +
+                '<div style="margin-top:8px;font-size:11px;color:#444;">' + err.message + '</div>' +
+                '</div>';
+            document.getElementById('player-count').textContent = '--';
+        }
+    }
+
+    function renderLeaderboard(data) {
+        const container = document.getElementById('leaderboard-rows');
+        document.getElementById('player-count').textContent = data.length;
+
+        if (data.length === 0) {
+            container.innerHTML =
+                '<div class="state-message">' +
+                '<div class="icon">&#9876;</div>' +
+                '<div>No warriors on the board yet today.</div>' +
+                '<div style="margin-top:8px;font-size:11px;color:#444;">Scores submit as developers code. Check back soon.</div>' +
+                '</div>';
+            return;
+        }
+
+        const maxScore = Math.max(data[0].vibe_score, 1);
+
+        let html = '';
+        data.forEach(function(entry, i) {
+            const rank = i + 1;
+            const anonId = (entry.anonymous_id || 'unknown').substring(0, 8);
+            const score = Math.round(entry.vibe_score || 0);
+            const barWidth = Math.round((score / 100) * 100);
+
+            let rowClass = '';
+            let medal = '';
+            if (rank === 1) { rowClass = 'gold'; medal = ' &#9733;'; }
+            else if (rank === 2) { rowClass = 'silver'; medal = ' &#9734;'; }
+            else if (rank === 3) { rowClass = 'bronze'; medal = ' &#9734;'; }
+
+            html += '<div class="lb-row ' + rowClass + '">' +
+                '<span class="lb-rank">#' + rank + '<span class="lb-rank-medal">' + medal + '</span></span>' +
+                '<span class="lb-name">Viber #' + anonId + '...</span>' +
+                '<span class="lb-score">' + score + '</span>' +
+                '<span class="lb-bar-cell"><span class="lb-bar-track"><span class="lb-bar-fill" style="width:' + barWidth + '%"></span></span></span>' +
+                '</div>';
+        });
+
+        container.innerHTML = html;
+    }
+
+    function switchTab(period) {
+        currentPeriod = period;
+        document.querySelectorAll('.tab').forEach(function(t) {
+            t.classList.toggle('active', t.dataset.period === period);
+        });
+        updatePeriodDisplay();
+        document.getElementById('leaderboard-rows').innerHTML =
+            '<div class="state-message"><div class="loading-spinner"></div><div>Fetching leaderboard data...</div></div>';
+        fetchLeaderboard();
+        resetRefreshTimer();
+    }
+
+    function resetRefreshTimer() {
+        refreshCountdown = 60;
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(function() {
+            refreshCountdown--;
+            document.getElementById('refresh-timer').textContent = 'Refreshes in ' + refreshCountdown + 's';
+            if (refreshCountdown <= 0) {
+                fetchLeaderboard();
+                refreshCountdown = 60;
+            }
+        }, 1000);
+    }
+
+    // Init
+    updatePeriodDisplay();
+    fetchLeaderboard();
+    resetRefreshTimer();
+</script>
+
+</body>
+</html>

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct MenuBarView: View {
     @EnvironmentObject var store: AppStore
@@ -140,6 +141,14 @@ struct MenuBarView: View {
                 Spacer()
 
                 Button {
+                    shareRankCard()
+                } label: {
+                    Text("Share Card")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+
+                Button {
                     let message = "I'm on the VibeWars leaderboard. Think you can out-vibe me? \u{1F525}\nhttps://vibewars.dev"
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(message, forType: .string)
@@ -171,6 +180,32 @@ struct MenuBarView: View {
         }
         .padding(16)
         .frame(width: 320)
+    }
+
+    @MainActor
+    private func shareRankCard() {
+        let totalTokens = store.activityProviders.reduce(0) { $0 + $1.todayTokens }
+        let cardView = RankCardView(
+            vibeScore: store.vibeScore,
+            ranking: store.dailyRanking,
+            commitsToday: store.commitsToday,
+            totalTokens: totalTokens,
+            streak: store.currentStreak,
+            username: store.githubUsername
+        )
+        guard let image = cardView.renderToImage() else { return }
+
+        // Find the button's window to anchor the share picker
+        guard let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.isVisible }) else {
+            // Fallback: copy to clipboard
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.writeObjects([image])
+            return
+        }
+
+        let picker = NSSharingServicePicker(items: [image])
+        let view = window.contentView ?? NSView()
+        picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
     }
 
     private func formatTokens(_ count: Int) -> String {
