@@ -549,7 +549,19 @@
 
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-            const data = await resp.json();
+            let data = await resp.json();
+
+            // Deduplicate for All Time — keep each warrior's best score
+            if (currentPeriod === 'alltime') {
+                const seen = {};
+                data = data.filter(function(entry) {
+                    const key = entry.anonymous_id;
+                    if (seen[key]) return false;
+                    seen[key] = true;
+                    return true;
+                });
+            }
+
             renderLeaderboard(data);
         } catch (err) {
             document.getElementById('leaderboard-rows').innerHTML =
