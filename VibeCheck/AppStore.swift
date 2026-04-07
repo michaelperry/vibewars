@@ -149,6 +149,7 @@ class AppStore: ObservableObject {
             await checkRankingService()
             await refreshAll()
         }
+        UpdateChecker.shared.startPeriodicChecks()
     }
 
     var isGitHubAuthenticated: Bool {

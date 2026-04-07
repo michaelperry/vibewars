@@ -210,9 +210,45 @@ struct SettingsView: View {
                     Task { await store.refreshAll() }
                 }
             }
+
+            Section("About") {
+                HStack {
+                    Text("VibeWars")
+                        .fontWeight(.medium)
+                    Spacer()
+                    Text("v\(UpdateChecker.shared.currentVersion)")
+                        .foregroundColor(.secondary)
+                }
+                .font(.caption)
+
+                Button("Check for Updates") {
+                    Task { await UpdateChecker.shared.checkForUpdate() }
+                }
+                .font(.caption)
+
+                if let update = UpdateChecker.shared.availableUpdate {
+                    HStack {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .foregroundColor(.blue)
+                        Text("Version \(update.version) is available")
+                            .font(.caption)
+                        Spacer()
+                        Button("Download") {
+                            if let url = URL(string: update.htmlURL) {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .font(.caption)
+                    }
+                } else if UpdateChecker.shared.lastChecked != nil {
+                    Text("You're up to date.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 400, height: 580)
+        .frame(width: 400, height: 640)
     }
 }
 

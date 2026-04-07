@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuBarView: View {
     @EnvironmentObject var store: AppStore
+    @ObservedObject private var updateChecker = UpdateChecker.shared
     @State private var challengeCopied = false
 
     private var vibe: VibeState {
@@ -35,6 +36,38 @@ struct MenuBarView: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
+            }
+
+            // Update banner
+            if let update = updateChecker.availableUpdate, !updateChecker.isDismissed {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .foregroundColor(.blue)
+                        .font(.caption)
+                    Text("v\(update.version) available")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Button("Update") {
+                        if let url = URL(string: update.htmlURL) {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption)
+                    .foregroundColor(.blue)
+                    Button {
+                        updateChecker.dismissUpdate()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.borderless)
+                }
+                .padding(8)
+                .background(Color.blue.opacity(0.08))
+                .cornerRadius(6)
             }
 
             Divider()
