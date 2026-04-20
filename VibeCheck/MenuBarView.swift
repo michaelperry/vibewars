@@ -76,6 +76,23 @@ struct MenuBarView: View {
                 .cornerRadius(6)
             }
 
+            // GitHub error banner
+            if let err = store.githubError {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.vibeOrange)
+                        .font(.system(size: 11))
+                    Text(err)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(8)
+                .background(Color.vibeOrange.opacity(0.08))
+                .cornerRadius(6)
+            }
+
             Divider()
 
             // GitHub stats
@@ -213,11 +230,20 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.borderless)
 
-                Button("Refresh") {
+                Button {
                     Task { await store.refreshAll() }
+                } label: {
+                    if store.isFetchingGitHub {
+                        HStack(spacing: 4) {
+                            ProgressView().controlSize(.mini)
+                            Text("Refreshing").font(.caption)
+                        }
+                    } else {
+                        Text("Refresh").font(.caption)
+                    }
                 }
                 .buttonStyle(.borderless)
-                .font(.caption)
+                .disabled(store.isFetchingGitHub)
 
                 if #available(macOS 14.0, *) {
                     SettingsLink {

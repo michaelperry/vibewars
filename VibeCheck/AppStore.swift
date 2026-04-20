@@ -672,21 +672,50 @@ class AppStore: ObservableObject {
     }
 
     private func ghRequest(_ urlString: String) async throws -> [String: Any] {
-        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
-        var req = URLRequest(url: url)
-        req.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let data = try await ghFetch(urlString)
         return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
     }
 
     private func ghRequestArray(_ urlString: String) async throws -> [[String: Any]] {
+        let data = try await ghFetch(urlString)
+        return try JSONSerialization.jsonObject(with: data) as? [[String: Any]] ?? []
+    }
+
+    private func ghFetch(_ urlString: String) async throws -> Data {
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }
         var req = URLRequest(url: url)
-        req.setValue("token \(githubToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        let (data, _) = try await URLSession.shared.data(for: req)
-        return try JSONSerialization.jsonObject(with: data) as? [[String: Any]] ?? []
+        req.setValue("Bearer \(githubToken)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        req.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        let (data, response) = try await URLSession.shared.data(for: req)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw GitHubAPIError(statusCode: http.statusCode, body: body, url: urlString)
+        }
+        return data
+    }
+}
+
+struct GitHubAPIError: LocalizedError {
+    let statusCode: Int
+    let body: String
+    let url: String
+
+    var errorDescription: String? {
+        switch statusCode {
+        case 401:
+            return "GitHub authentication failed (401). Sign out in Settings and sign back in."
+        case 403:
+            if body.lowercased().contains("rate limit") {
+                return "GitHub API rate limit hit. Try again in a few minutes."
+            }
+            return "GitHub permission denied (403). Token may lack required scopes."
+        case 404:
+            return "GitHub endpoint not found (404)."
+        default:
+            let preview = body.prefix(160)
+            return "GitHub API error \(statusCode): \(preview)"
+        }
     }
 }
 
