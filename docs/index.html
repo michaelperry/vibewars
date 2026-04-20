@@ -283,6 +283,63 @@
             border-radius: 6px;
             color: var(--green);
             font-size: 13px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .or-brew code:hover { border-color: var(--green); }
+
+        /* What's new feed */
+        .changelog {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .changelog-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text);
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .changelog-row:last-child { border-bottom: none; }
+        .changelog-row:hover { background: rgba(255,255,255,0.02); }
+
+        .changelog-row .msg {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .changelog-row .when {
+            color: var(--dim);
+            font-size: 11px;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .changelog-skeleton {
+            padding: 24px 18px;
+            color: var(--dim);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .last-updated {
+            margin-top: 12px;
+            font-size: 11px;
+            color: var(--dim);
+            font-variant-numeric: tabular-nums;
         }
 
         /* Privacy */
@@ -781,6 +838,14 @@
         </div>
     </div>
 
+    <!-- What's new -->
+    <div class="section">
+        <h2>What's new</h2>
+        <div class="changelog" id="changelog">
+            <div class="changelog-skeleton">Loading recent commits…</div>
+        </div>
+    </div>
+
     <!-- Download -->
     <div class="download-section">
         <h2 style="font-size: 22px; color: #fff; margin-bottom: 6px; letter-spacing: 0; text-transform: none;">Play VibeWars. See how your vibes rank.</h2>
@@ -791,7 +856,7 @@
         <div class="download-note">macOS 13+ &middot; Apple Silicon & Intel</div>
         <div style="font-size: 11px; color: #444; margin-top: 8px; max-width: 400px; margin-left: auto; margin-right: auto;">If macOS blocks the app: right-click VibeWars.app &rarr; Open &rarr; Open. You only need to do this once.</div>
         <div class="or-brew">
-            or &nbsp; <code>brew tap michaelperry/tap && brew install --cask vibewars</code>
+            or &nbsp; <code id="brew-cmd" title="Click to copy" onclick="copyBrew(this)">brew tap michaelperry/tap && brew install --cask vibewars</code>
         </div>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 24px;">
             <a href="https://twitter.com/intent/tweet?text=I%27m%20on%20the%20VibeWars%20leaderboard.%20Think%20you%20can%20out-vibe%20me%3F%20%F0%9F%94%A5%0A%0Ahttps%3A%2F%2Fvibewars.dev" target="_blank" class="download-btn" style="background: var(--purple); font-size: 13px; padding: 12px 24px;">
@@ -819,7 +884,57 @@
             &nbsp;&middot;&nbsp;
             <a href="leaderboard.html" style="color: var(--purple); text-decoration: none;">Leaderboard</a>
         </div>
+        <div class="last-updated" id="last-updated">&nbsp;</div>
     </footer>
+
+    <script>
+        function relativeTime(date) {
+            const diff = Math.max(0, (Date.now() - date.getTime()) / 1000);
+            if (diff < 60)      return 'just now';
+            if (diff < 3600)    return Math.floor(diff/60)    + 'm ago';
+            if (diff < 86400)   return Math.floor(diff/3600)  + 'h ago';
+            if (diff < 604800)  return Math.floor(diff/86400) + 'd ago';
+            if (diff < 2592000) return Math.floor(diff/604800) + 'w ago';
+            return Math.floor(diff/2592000) + 'mo ago';
+        }
+
+        function escapeHtml(s) {
+            return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function copyBrew(el) {
+            navigator.clipboard.writeText(el.textContent).then(() => {
+                const orig = el.textContent;
+                el.textContent = 'copied!';
+                setTimeout(() => { el.textContent = orig; }, 1500);
+            });
+        }
+
+        fetch('https://api.github.com/repos/michaelperry/vibewars/commits?per_page=5', {
+            headers: { 'Accept': 'application/vnd.github+json' }
+        })
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(commits => {
+                if (!Array.isArray(commits) || !commits.length) return;
+
+                const last = new Date(commits[0].commit.author.date);
+                document.getElementById('last-updated').textContent = 'Last updated ' + relativeTime(last);
+
+                const changelog = document.getElementById('changelog');
+                changelog.innerHTML = commits.map(c => {
+                    const msg = (c.commit.message || '').split('\n')[0].slice(0, 80);
+                    const when = relativeTime(new Date(c.commit.author.date));
+                    return '<a class="changelog-row" href="' + c.html_url + '" target="_blank" rel="noopener">'
+                        + '<span class="msg">' + escapeHtml(msg) + '</span>'
+                        + '<span class="when">' + when + '</span>'
+                        + '</a>';
+                }).join('');
+            })
+            .catch(() => {
+                const changelog = document.getElementById('changelog');
+                if (changelog) changelog.innerHTML = '<div class="changelog-skeleton">Updates feed unavailable — see <a href="https://github.com/michaelperry/vibewars/commits/main" style="color:var(--purple);">commits on GitHub</a></div>';
+            });
+    </script>
 
 </div>
 
