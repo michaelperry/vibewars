@@ -70,6 +70,7 @@ class AppStore: ObservableObject {
 
     // Scoring & Rankings
     @Published var vibeScore: VibeScore = ScoreEngine.calculate(commits: 0, providers: [], streak: 0)
+    @Published var weeklyVibeScore: VibeScore = ScoreEngine.calculate(commits: 0, providers: [], streak: 0, period: .weekly)
     @Published var dailyRanking: RankingResult? = nil
     @Published var weeklyRanking: RankingResult? = nil
     @Published var warriorNumber: Int? = nil
@@ -264,7 +265,14 @@ class AppStore: ObservableObject {
             self.vibeScore = ScoreEngine.calculate(
                 commits: self.commitsToday,
                 providers: self.activityProviders,
-                streak: self.currentStreak
+                streak: self.currentStreak,
+                period: .daily
+            )
+            self.weeklyVibeScore = ScoreEngine.calculate(
+                commits: self.commitsWeek,
+                providers: self.activityProviders,
+                streak: self.currentStreak,
+                period: .weekly
             )
             self.lastUpdated = Date()
         }
@@ -279,7 +287,8 @@ class AppStore: ObservableObject {
     }
 
     private func submitAndFetchRankings() async {
-        let score = vibeScore.total
+        let dailyScore = vibeScore.total
+        let weeklyScore = weeklyVibeScore.total
         let dailyKey = dayString(Date())
 
         var cal = Calendar(identifier: .gregorian)
@@ -291,10 +300,10 @@ class AppStore: ObservableObject {
         do {
             // Single round trip per period: upsert score + get rank back
             async let dailyResult = RankingService.shared.submitAndRank(
-                score: score, periodType: "daily", periodKey: dailyKey
+                score: dailyScore, periodType: "daily", periodKey: dailyKey
             )
             async let weeklyResult = RankingService.shared.submitAndRank(
-                score: score, periodType: "weekly", periodKey: weeklyKey
+                score: weeklyScore, periodType: "weekly", periodKey: weeklyKey
             )
 
             let (daily, weekly) = try await (dailyResult, weeklyResult)
